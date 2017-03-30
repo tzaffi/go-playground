@@ -27,7 +27,7 @@ func getMyRepos(client *bitbucket.Client, owner string, team string, options ...
 	fmt.Println("getting all pages ?", getAllPages)
 	var pages []uint;
 	if(!getAllPages) {
-		pages = []uint{2, 4}
+		pages = []uint{1}
 	} else {
 		pages = []uint{1, 11}
 	}
@@ -64,6 +64,43 @@ func reflectionLength(res *interface{}) int {
 	}
 }
 
+// cf. https://blog.golang.org/json-and-go#TOC_5.
+func reflectionParse(res *interface{}) {
+	resVal := *res
+	switch t0 := resVal.(type) {
+	case []interface{}:
+		fmt.Println("array")
+	case map[string]interface{}:
+		fmt.Println("map")
+	default:
+		fmt.Printf("Surprise, surprise. Is %v\n", t0)
+	}
+}
+
+//find all values that have the given key and a string value
+func filterByKey(res *interface{}, key string) []string {
+  var result []string
+	resVal := *res
+	switch t0 := resVal.(type) {
+	case []interface{}:
+		for _, v := range resVal.([]interface{}) {
+			result = append(result, filterByKey(&v, key)...)
+		}
+	case map[string]interface{}:
+		for k, v := range resVal.(map[string]interface{}) {
+			if k == key && reflect.TypeOf(v).Kind() == reflect.String {
+				result = append(result, v.(string))
+			} else {
+				result = append(result, filterByKey(&v, key)...)
+			}
+		}
+	default:
+		fmt.Printf("Surprise, surprise. %v is type %T\n", t0, t0)
+		return result
+	}
+	return result
+}
+
 func main() {
 	var username string
 	fmt.Print("Bitbucket Email: ")
@@ -78,5 +115,10 @@ func main() {
 	res := getMyRepos(c, "edlabtc", "edlabtc", "ALL_PAGES")
 	fmt.Println("reflectionLength(&res) == ", reflectionLength(&res))	
 	fmt.Println("len(getPretty(&res)) == ", len(getPretty(&res)))
+	reflectionParse(&res)
+	repos := filterByKey(&res, "full_name")
+	reposM, _ := json.MarshalIndent(repos, "", " ")
+	fmt.Println("repos:", string(reposM))
+	
 	//printPretty(&res)	
 }
