@@ -4,17 +4,36 @@ import (
 	"encoding/json"
 	"fmt"
 	//	"os"
-	"github.com/ktrysmt/go-bitbucket"
+	"github.com/tzaffi/go-bitbucket"
 	"golang.org/x/crypto/ssh/terminal"
+	"reflect"
 	"syscall"
 )
 
-func getMyRepos(client *bitbucket.Client, owner string, team string) interface{} {
+func getMyRepos(client *bitbucket.Client, owner string, team string, options ...string) interface{} {
 	opt := &bitbucket.RepositoriesOptions{
 		Owner: owner,
 		Team:  team,
 	}
-	res := client.Repositories.ListForTeam(opt)
+	/*
+	if options != nil {
+		fmt.Println("something:")
+	} else {
+		fmt.Println("nada:")
+	}
+  */
+	fmt.Printf("options = %v\tTtype = %T\n", options, options)
+	getAllPages := options != nil && options[0] == "ALL_PAGES"
+	fmt.Println("getting all pages ?", getAllPages)
+	var pages []uint;
+	if(!getAllPages) {
+		pages = []uint{2, 4}
+	} else {
+		pages = []uint{1, 11}
+	}
+	
+	res := client.Repositories.ListForTeam(opt, pages...)
+
 	return res
 
 	//res := c.Repositories.ListForAccount(opt)
@@ -22,11 +41,29 @@ func getMyRepos(client *bitbucket.Client, owner string, team string) interface{}
 	//return result
 }
 
-func printPretty(res *interface{}){
+
+func getPretty(res *interface{}) string {
 	resJson, _ := json.MarshalIndent(res, "", "  ")
-	fmt.Println(string(resJson))
+	return string(resJson)
 }
-	
+
+func printPretty(res *interface{}) {
+	fmt.Println(getPretty(res))
+}
+
+func reflectionLength(res *interface{}) int {
+	resVal := *res
+	fmt.Printf("reflect.TypeOf(resVal) = %v\nreflect.TypeOf(resVal).Kind() = %v\n",
+		reflect.TypeOf(resVal), reflect.TypeOf(resVal).Kind())
+	switch reflect.TypeOf(resVal).Kind() {
+	case reflect.Slice:
+		s := reflect.ValueOf(resVal)
+		return s.Len()
+	default:
+		return -1
+	}
+}
+
 func main() {
 	var username string
 	fmt.Print("Bitbucket Email: ")
@@ -38,8 +75,8 @@ func main() {
 	fmt.Print("Thanks [" + username + "] !!!!\n")
 
 	c := bitbucket.NewBasicAuth(username, password)
-
-	//	os.Exit(0)
-	res := getMyRepos(c, "edlabtc", "edlabtc")
-	printPretty(&res)
+	res := getMyRepos(c, "edlabtc", "edlabtc", "ALL_PAGES")
+	fmt.Println("reflectionLength(&res) == ", reflectionLength(&res))	
+	fmt.Println("len(getPretty(&res)) == ", len(getPretty(&res)))
+	//printPretty(&res)	
 }
