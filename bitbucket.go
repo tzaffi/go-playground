@@ -7,6 +7,7 @@ import (
 	"github.com/tzaffi/go-bitbucket"
 	"golang.org/x/crypto/ssh/terminal"
 	"reflect"
+	"sort"
 	"syscall"
 )
 
@@ -117,6 +118,7 @@ func main() {
 	fmt.Println("len(getPretty(&res)) == ", len(getPretty(&res)))
 	reflectionParse(&res)
 	repos := filterByKey(&res, "full_name")
+	sort.Strings(repos)
 	reposM, _ := json.MarshalIndent(repos, "", " ")
 	fmt.Println("repos:", string(reposM))
 	
