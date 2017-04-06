@@ -121,6 +121,5 @@ func main() {
 	sort.Strings(repos)
 	reposM, _ := json.MarshalIndent(repos, "", " ")
 	fmt.Println("repos:", string(reposM))
-	
 	//printPretty(&res)	
 }
