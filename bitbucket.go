@@ -79,20 +79,20 @@ func reflectionParse(res *interface{}) {
 }
 
 //find all values that have the given key and a string value
-func filterByKey(res *interface{}, key string) []string {
+func grepByKey(res *interface{}, key string) []string {
   var result []string
 	resVal := *res
 	switch t0 := resVal.(type) {
 	case []interface{}:
 		for _, v := range resVal.([]interface{}) {
-			result = append(result, filterByKey(&v, key)...)
+			result = append(result, grepByKey(&v, key)...)
 		}
 	case map[string]interface{}:
 		for k, v := range resVal.(map[string]interface{}) {
 			if k == key && reflect.TypeOf(v).Kind() == reflect.String {
 				result = append(result, v.(string))
 			} else {
-				result = append(result, filterByKey(&v, key)...)
+				result = append(result, grepByKey(&v, key)...)
 			}
 		}
 	default:
@@ -100,6 +100,33 @@ func filterByKey(res *interface{}, key string) []string {
 		return result
 	}
 	return result
+}
+
+
+//reurn the first object which has a key with given value
+//otherwise, return an empty struct
+func findByKeyVal(res *interface{}, key string, val string) map[string]interface{} {
+	var result map[string]interface{}
+	respVal := *res
+	switch t0 := respVal.(type) {
+	case []interface{}:
+		for _, v := range respVal.([]interface{}) {
+			subResult := findByKeyVal(&v, key, val)
+			if len(subResult) > 0 {
+				return subResult
+			}
+		}
+		return result
+	case map[string]interface{}:
+		respMap := respVal.(map[string]interface{})
+		if valTest, ok := respMap[key]; ok && val == valTest {
+			return respMap
+		}
+		return result
+	default:
+		fmt.Printf("Surprise, surprise. %v is type %T\n", t0, t0)
+		return result
+	}
 }
 
 func main() {
@@ -117,9 +144,10 @@ func main() {
 	fmt.Println("reflectionLength(&res) == ", reflectionLength(&res))	
 	fmt.Println("len(getPretty(&res)) == ", len(getPretty(&res)))
 	reflectionParse(&res)
-	repos := filterByKey(&res, "full_name")
+	repos := grepByKey(&res, "full_name")
 	sort.Strings(repos)
 	reposM, _ := json.MarshalIndent(repos, "", " ")
 	fmt.Println("repos:", string(reposM))
-	//printPretty(&res)	
+	repo = findByKeyVal(&res, "full_name", "edlabtc/library-pocketknowledge")
+//	printPretty(&res)	
 }
