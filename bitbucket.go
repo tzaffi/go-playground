@@ -8,6 +8,7 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 	"reflect"
 	"sort"
+	"strconv"
 	"syscall"
 )
 
@@ -102,15 +103,39 @@ func grepByKey(res *interface{}, key string) []string {
 	return result
 }
 
+//aggregate the values arrays present in bitbucket JSON
+func aggregateValues(res *interface{}) []interface{} {
+	var result []interface{}
+	respVal := *res
+	switch t0 := respVal.(type) {
+	case []interface{}:
+		for _, v := range respVal.([]interface{}) {
+			result = append(result, aggregateValues(&v)...)
+		}
+		return result
+	case map[string]interface{}:
+		respMap := respVal.(map[string]interface{})
+		if val, ok := respMap["values"]; ok {
+			return val.([]interface{})
+			//TODO: NOT SAFE!!!!
+		}
+		return result
+	default:
+		fmt.Printf("Surprise, surprise. %v is type %T\n", t0, t0)
+		return result
+	}
+}
 
-//reurn the first object which has a key with given value
+//return the first object which has a key with given value
 //otherwise, return an empty struct
 func findByKeyVal(res *interface{}, key string, val string) map[string]interface{} {
 	var result map[string]interface{}
 	respVal := *res
 	switch t0 := respVal.(type) {
 	case []interface{}:
-		for _, v := range respVal.([]interface{}) {
+		respSlice := respVal.([]interface{})
+		fmt.Printf("case []interface{} of length %d\n",len(respSlice))
+		for _, v := range respSlice {
 			subResult := findByKeyVal(&v, key, val)
 			if len(subResult) > 0 {
 				return subResult
@@ -119,6 +144,7 @@ func findByKeyVal(res *interface{}, key string, val string) map[string]interface
 		return result
 	case map[string]interface{}:
 		respMap := respVal.(map[string]interface{})
+		fmt.Printf("case map[string]interface{} of length %d\n",len(respMap))
 		if valTest, ok := respMap[key]; ok && val == valTest {
 			return respMap
 		}
@@ -127,6 +153,18 @@ func findByKeyVal(res *interface{}, key string, val string) map[string]interface
 		fmt.Printf("Surprise, surprise. %v is type %T\n", t0, t0)
 		return result
 	}
+}
+
+//Given slice return slice with all 
+func filterByPredicate(res *[]interface{}, pred func(*interface{}) bool) []interface{} {
+	var result []interface{}
+	respSlice := *res
+	for _, v := range respSlice {
+		if pred(&v) {
+			result = append(result, v)
+		}
+	}
+	return result
 }
 
 func main() {
@@ -143,11 +181,26 @@ func main() {
 	res := getMyRepos(c, "edlabtc", "edlabtc", "ALL_PAGES")
 	fmt.Println("reflectionLength(&res) == ", reflectionLength(&res))	
 	fmt.Println("len(getPretty(&res)) == ", len(getPretty(&res)))
-	reflectionParse(&res)
+	//reflectionParse(&res)
 	repos := grepByKey(&res, "full_name")
 	sort.Strings(repos)
 	reposM, _ := json.MarshalIndent(repos, "", " ")
 	fmt.Println("repos:", string(reposM))
-	repo = findByKeyVal(&res, "full_name", "edlabtc/library-pocketknowledge")
-//	printPretty(&res)	
+	aggs := aggregateValues(&res)
+	fmt.Printf("len(aggs) = %d\n", len(aggs))
+	aggsM, _ := json.MarshalIndent(aggs, "", " ")
+	fmt.Println("aggs:", string(aggsM))
+	var aggsIntf interface{} = aggs
+	repo := findByKeyVal(&aggsIntf, "full_name", "edlabtc/library-pocketknowledge")
+	fmt.Printf("repo:\n%v\n", repo)
+
+	isSmallerThan10Megs := func(repo *interface{}) bool{
+		if val, ok := (*repo).(map[string] interface{} )["size"]; ok  {
+			if f, err := strconv.ParseFloat(val); err == nil && f < 10000000 {
+				return true
+			}
+		}
+		return false
+	}
+	//printPretty(&res)	
 }
