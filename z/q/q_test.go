@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-func TestQueue(t *testing.T) {
-	q := Q{}
+func TestIntQueue(t *testing.T) {
+	q := IntQ{}
 
 	if !q.Empty() {
 		t.Error("q should be empty")
@@ -28,7 +28,7 @@ func TestQueue(t *testing.T) {
 		}
 	}
 
-	q = Q{}
+	q = IntQ{}
 	ordinals := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 	for _, x := range ordinals {
 		fmt.Printf("ordinal = %d\n", x)

@@ -2,23 +2,47 @@ package queue
 
 import (
 	"fmt"
+
+	"github.com/tzaffi/go-playground/z/node"
 )
 
-type Q struct {
+type IntQ struct {
 	q []int
 }
 
-func (q *Q) Empty() bool {
+func (q *IntQ) Empty() bool {
 	return len(q.q) == 0
 }
 
-func (q *Q) Push(x int) {
+func (q *IntQ) Push(x int) {
 	q.q = append(q.q, x)
 }
 
-func (q *Q) Pop() (int, error) {
+func (q *IntQ) Pop() (int, error) {
 	if q.Empty() {
 		return 0, fmt.Errorf("cannot Pop() an empty queue")
+	}
+	res := q.q[0]
+	q.q = q.q[1:]
+	return res, nil
+}
+
+// --------- node queue's
+type NodeQ struct {
+	q []*node.Node
+}
+
+func (q *NodeQ) Empty() bool {
+	return len(q.q) == 0
+}
+
+func (q *NodeQ) Push(x *node.Node) {
+	q.q = append(q.q, x)
+}
+
+func (q *NodeQ) Pop() (*node.Node, error) {
+	if q.Empty() {
+		return nil, fmt.Errorf("cannot Pop() an empty queue")
 	}
 	res := q.q[0]
 	q.q = q.q[1:]
