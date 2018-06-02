@@ -7,13 +7,66 @@ import (
 )
 
 func main() {
-	switch cmd := "BFS_BY_LEVEL"; cmd {
+	switch cmd := "PAINT_FILL"; cmd {
 	case "BFS_BY_LEVEL":
 		fmt.Println("BFS by level")
 		bfsByLevel()
+	case "PAINT_FILL":
+		fmt.Println("Paint Fill")
+		paintFill()
 	default:
 		fmt.Print("did not select a viable choice to run\n")
 	}
+}
+
+type Screen [][]uint32
+
+var screen Screen
+var w, h int
+
+func (a Screen) String() string {
+	res := ""
+	for _, r := range a {
+		res += fmt.Sprintf("%v\n", r)
+	}
+	return res
+}
+
+func paintFill() {
+	w, h := 20, 10
+	screen = Screen(make([][]uint32, h))
+	for i := range screen {
+		screen[i] = make([]uint32, w)
+	}
+	//make diagonal:
+	for x, y := w-1, 0; x >= 0 && y < h; x, y = x-1, y+1 {
+		screen[y][x] = 1
+	}
+
+	fmt.Printf("BEFORE:\n%s\n", screen.String())
+
+	var paintR func(x, y int, oc, color uint32)
+	paintR = func(x, y int, oc, color uint32) {
+		if x < 0 || y < 0 || x >= w || y >= h || screen[y][x] != oc {
+			return
+		}
+		screen[y][x] = color
+		paintR(x+1, y, oc, color)
+		paintR(x, y+1, oc, color)
+		paintR(x-1, y, oc, color)
+		paintR(x, y-1, oc, color)
+	}
+
+	paintIn := func(x, y int, color uint32) {
+		oc := screen[y][x]
+		paintR(x, y, oc, color)
+	}
+
+	paintIn(7, 7, 7)
+	fmt.Printf("AFTER paintIn(%d, %d, %d):\n%s\n", 7, 7, 7, screen.String())
+
+	paintIn(19, 9, 3)
+	fmt.Printf("AFTER paintIn(%d, %d, %d):\n%s\n", 9, 19, 3, screen.String())
 }
 
 /*  7
