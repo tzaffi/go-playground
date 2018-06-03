@@ -7,17 +7,79 @@ import (
 )
 
 func main() {
-	switch cmd := "PAINT_FILL"; cmd {
+	switch cmd := "ONE_AWAY"; cmd {
 	case "BFS_BY_LEVEL":
 		fmt.Println("BFS by level")
 		bfsByLevel()
 	case "PAINT_FILL":
 		fmt.Println("Paint Fill")
 		paintFill()
+	case "ONE_AWAY":
+		fmt.Println("One Away")
+		oneAwayMain()
 	default:
 		fmt.Print("did not select a viable choice to run\n")
 	}
 }
+
+/********** ONE_AWAY ********/
+
+type oneAwayTC struct {
+	x, y   string
+	expect bool
+}
+
+func oneAwayMain() {
+	tcs := []oneAwayTC{
+		oneAwayTC{"pale", "ple", true},
+		oneAwayTC{"pales", "pale", true},
+		oneAwayTC{"pale", "bale", true},
+		oneAwayTC{"pale", "palk", true},
+		oneAwayTC{"pale", "bake", false},
+		oneAwayTC{"pale", "ale", true},
+		oneAwayTC{"pale", "pal", true},
+		oneAwayTC{"p", "", true},
+		oneAwayTC{"", "p", true},
+		oneAwayTC{"", "", true},
+		oneAwayTC{"", "abc", false},
+		oneAwayTC{"pale", "pale", true},
+	}
+	for _, tc := range tcs {
+		x, y := tc.x, tc.y
+		fmt.Printf("%s vs %s == %t ? --> %t\n", x, y, tc.expect, oneAway(x, y))
+	}
+}
+
+func oneAway(x, y string) bool {
+	if len(x) == len(y) {
+		return sameOrReplace1(x, y)
+	}
+	if len(x) < len(y) {
+		x, y = y, x
+	}
+	if len(x) > len(y)+1 {
+		return false
+	}
+	if len(x) == 1 {
+		return true
+	}
+	var i int
+	for i = 0; i < len(y) && x[i] == y[i]; i++ {
+	}
+	return x[i+1:] == y[i:]
+}
+
+func sameOrReplace1(x, y string) bool {
+	var i int
+	for i = 0; i < len(y) && x[i] == y[i]; i++ {
+	}
+	if i == len(x) {
+		return true
+	}
+	return x[i+1:] == y[i+1:]
+}
+
+/********** PAINT_FILL *********/
 
 type Screen [][]uint32
 
