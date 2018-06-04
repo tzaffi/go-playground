@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	switch cmd := "ONE_AWAY"; cmd {
+	switch cmd := "BINODE"; cmd {
 	case "BFS_BY_LEVEL":
 		fmt.Println("BFS by level")
 		bfsByLevel()
@@ -17,9 +17,148 @@ func main() {
 	case "ONE_AWAY":
 		fmt.Println("One Away")
 		oneAwayMain()
+	case "BINODE":
+		fmt.Println("Binode")
+		binodeMain()
 	default:
 		fmt.Print("did not select a viable choice to run\n")
 	}
+}
+
+/********** BI_NODE  ********/
+
+func binodeMain() {
+	fmt.Printf("[0, 4, 5] --> %s\n", slice2dll([]int{0, 4, 5}))
+	fullTree := makeFullTree()
+	fullTreeBFS := binode2bfs(fullTree)
+	printBFS(fullTreeBFS)
+
+	testCases := []binodeTC{
+		binodeTC{
+			root:        fullTree,
+			expectedDll: slice2dll([]int{1, 2, 3, 4, 5, 7, 8, 9, 11}),
+		},
+		binodeTC{
+			root:        nil,
+			expectedDll: nil,
+		},
+		binodeTC{
+			root:        &Binode{data: 17},
+			expectedDll: &Binode{data: 17},
+		},
+		binodeTC{
+			root:        makeLeftTree(),
+			expectedDll: slice2dll([]int{1, 2, 3, 5}),
+		},
+	}
+
+	for _, tc := range testCases {
+		actualDll, _ := listify(tc.root)
+		actStr := actualDll.String()
+		expStr := tc.expectedDll.String()
+		fmt.Printf("expected: %s VS actual: %s\n", expStr, actStr)
+		if actStr == expStr {
+			fmt.Println("SUCCESS!!!!!!!!!!")
+		} else {
+			fmt.Println("FAIL :-(")
+		}
+	}
+}
+
+func listify(root *Binode) (min, max *Binode) {
+	if root == nil {
+		return
+	}
+
+	min, lhead := listify(root.n1)
+	rtail, max := listify(root.n2)
+	if lhead == nil {
+		min = root
+	} else {
+		lhead.n2 = root
+		root.n1 = lhead
+	}
+	if rtail == nil {
+		max = root
+	} else {
+		rtail.n1 = root
+		root.n2 = rtail
+	}
+	return
+}
+
+func (dll *Binode) String() string {
+	if dll == nil {
+		return ""
+	}
+	return fmt.Sprintf("[%d]-%s", dll.data, dll.n2.String())
+}
+
+type Binode struct {
+	n1, n2 *Binode
+	data   int
+}
+
+type binodeTC struct {
+	root, expectedDll *Binode
+}
+
+/*      5
+     /    \
+    3      9
+   / \    / \
+  2   4  7  11
+ /        \
+1          8 */
+/* --> [1, 2, 3, 4, 5, 7, 8, 9, 11] */
+func makeFullTree() *Binode {
+	one := &Binode{data: 1}
+	two := &Binode{data: 2, n1: one}
+	four := &Binode{data: 4}
+	three := &Binode{data: 3, n1: two, n2: four}
+	seven := &Binode{data: 7, n2: &Binode{data: 8}}
+	nine := &Binode{data: 9, n1: seven, n2: &Binode{data: 11}}
+	return &Binode{data: 5, n1: three, n2: nine}
+}
+
+/*      5
+     /
+    3
+   /
+  2
+ /
+1   */
+/* --> [1, 2, 3, 5] */
+func makeLeftTree() *Binode {
+	one := &Binode{data: 1}
+	two := &Binode{data: 2, n1: one}
+	three := &Binode{data: 3, n1: two}
+	return &Binode{data: 5, n1: three}
+}
+
+func binode2bfs(root *Binode) *node.Node {
+	if root == nil {
+		return nil
+	}
+	return &node.Node{
+		Val:   root.data,
+		Left:  binode2bfs(root.n1),
+		Right: binode2bfs(root.n2),
+	}
+}
+
+func slice2dll(s []int) *Binode {
+	if len(s) == 0 {
+		return nil
+	}
+	bn := &Binode{
+		n2:   slice2dll(s[1:]),
+		data: s[0],
+	}
+	if bn.n2 != nil {
+		bn.n2.n1 = bn
+	}
+	return bn
 }
 
 /********** ONE_AWAY ********/
