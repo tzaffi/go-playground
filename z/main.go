@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	switch cmd := "BINODE"; cmd {
+	switch cmd := "SORT_STACK"; cmd {
 	case "BFS_BY_LEVEL":
 		fmt.Println("BFS by level")
 		bfsByLevel()
@@ -20,9 +20,92 @@ func main() {
 	case "BINODE":
 		fmt.Println("Binode")
 		binodeMain()
+	case "SORT_STACK":
+		fmt.Println("Sort Stack")
+		sortStackMain()
 	default:
 		fmt.Print("did not select a viable choice to run\n")
 	}
+}
+
+/********** SORT_STACK  ********/
+
+func sortStackMain() {
+	myStack := Stack([]int{1, 2, 3, 4, 5})
+	fmt.Printf("myStack.Peek() = %d\n", myStack.Peek())
+
+	fmt.Printf("myStack.Pop() = %d\n", myStack.Pop())
+	fmt.Printf("myStack.Peek() = %d\n", myStack.Peek())
+
+	myStack.Push(17)
+	fmt.Printf("myStack.Peek() = %d\n", myStack.Peek())
+
+	fmt.Printf("myStack = %s\n", &myStack)
+
+	myStack = Stack([]int{5, 2, 1, 4, 7, 6})
+	fmt.Printf("BEFORE: %s\n", &myStack)
+	Sort(&myStack)
+	fmt.Printf("AFTER: %s\n", &myStack)
+	for ; !myStack.Empty(); myStack.Pop() {
+		fmt.Println(myStack.Peek())
+	}
+}
+
+func Sort(s *Stack) {
+	if s == nil {
+		return
+	}
+	sorted := Stack([]int{})
+	sortR(s, &sorted)
+	//	fmt.Printf("sort: s, sorted = %s, %s\n", s, &sorted)
+	*s = sorted
+}
+
+func sortR(s, sorted *Stack) {
+	//	fmt.Printf("sortR: s, sorted = %s, %s\n", s, sorted)
+	if s.Empty() {
+		return
+	}
+	v := s.Pop()
+	var numPops int
+	for numPops = 0; !sorted.Empty() && sorted.Peek() < v; numPops++ {
+		s.Push(sorted.Pop())
+	}
+	sorted.Push(v)
+	for i := 0; i < numPops; i++ {
+		sorted.Push(s.Pop())
+	}
+	sortR(s, sorted)
+}
+
+type Stack []int
+
+func (s *Stack) String() string {
+	return fmt.Sprintf("%v", []int(*s))
+}
+
+func (s *Stack) Empty() bool {
+	return len(*s) == 0
+}
+
+func (s *Stack) Peek() int {
+	if s.Empty() {
+		return 0
+	}
+	return (*s)[len(*s)-1]
+}
+
+func (s *Stack) Pop() int {
+	if s.Empty() {
+		return 0
+	}
+	pop := s.Peek()
+	*s = append((*s)[0 : len(*s)-1])
+	return pop
+}
+
+func (s *Stack) Push(x int) {
+	*s = append(*s, x)
 }
 
 /********** BI_NODE  ********/
