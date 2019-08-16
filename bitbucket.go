@@ -18,22 +18,22 @@ func getMyRepos(client *bitbucket.Client, owner string, team string, options ...
 		Team:  team,
 	}
 	/*
-	if options != nil {
-		fmt.Println("something:")
-	} else {
-		fmt.Println("nada:")
-	}
-  */
+		if options != nil {
+			fmt.Println("something:")
+		} else {
+			fmt.Println("nada:")
+		}
+	*/
 	fmt.Printf("options = %v\tTtype = %T\n", options, options)
 	getAllPages := options != nil && options[0] == "ALL_PAGES"
 	fmt.Println("getting all pages ?", getAllPages)
-	var pages []uint;
-	if(!getAllPages) {
+	var pages []uint
+	if !getAllPages {
 		pages = []uint{1}
 	} else {
 		pages = []uint{1, 11}
 	}
-	
+
 	res := client.Repositories.ListForTeam(opt, pages...)
 
 	return res
@@ -42,7 +42,6 @@ func getMyRepos(client *bitbucket.Client, owner string, team string, options ...
 	//var result interface{}
 	//return result
 }
-
 
 func getPretty(res *interface{}) string {
 	resJson, _ := json.MarshalIndent(res, "", "  ")
@@ -81,7 +80,7 @@ func reflectionParse(res *interface{}) {
 
 //find all values that have the given key and a string value
 func grepByKey(res *interface{}, key string) []string {
-  var result []string
+	var result []string
 	resVal := *res
 	switch t0 := resVal.(type) {
 	case []interface{}:
@@ -134,7 +133,7 @@ func findByKeyVal(res *interface{}, key string, val string) map[string]interface
 	switch t0 := respVal.(type) {
 	case []interface{}:
 		respSlice := respVal.([]interface{})
-		fmt.Printf("case []interface{} of length %d\n",len(respSlice))
+		fmt.Printf("case []interface{} of length %d\n", len(respSlice))
 		for _, v := range respSlice {
 			subResult := findByKeyVal(&v, key, val)
 			if len(subResult) > 0 {
@@ -144,7 +143,7 @@ func findByKeyVal(res *interface{}, key string, val string) map[string]interface
 		return result
 	case map[string]interface{}:
 		respMap := respVal.(map[string]interface{})
-		fmt.Printf("case map[string]interface{} of length %d\n",len(respMap))
+		fmt.Printf("case map[string]interface{} of length %d\n", len(respMap))
 		if valTest, ok := respMap[key]; ok && val == valTest {
 			return respMap
 		}
@@ -155,7 +154,7 @@ func findByKeyVal(res *interface{}, key string, val string) map[string]interface
 	}
 }
 
-//Given slice return slice with all 
+//Given slice return slice with all
 func filterByPredicate(res *[]interface{}, pred func(*interface{}) bool) []interface{} {
 	var result []interface{}
 	respSlice := *res
@@ -179,7 +178,7 @@ func main() {
 
 	c := bitbucket.NewBasicAuth(username, password)
 	res := getMyRepos(c, "edlabtc", "edlabtc", "ALL_PAGES")
-	fmt.Println("reflectionLength(&res) == ", reflectionLength(&res))	
+	fmt.Println("reflectionLength(&res) == ", reflectionLength(&res))
 	fmt.Println("len(getPretty(&res)) == ", len(getPretty(&res)))
 	//reflectionParse(&res)
 	repos := grepByKey(&res, "full_name")
@@ -193,14 +192,29 @@ func main() {
 	var aggsIntf interface{} = aggs
 	repo := findByKeyVal(&aggsIntf, "full_name", "edlabtc/library-pocketknowledge")
 	fmt.Printf("repo:\n%v\n", repo)
-
-	isSmallerThan10Megs := func(repo *interface{}) bool{
-		if val, ok := (*repo).(map[string] interface{} )["size"]; ok  {
-			if f, err := strconv.ParseFloat(val); err == nil && f < 10000000 {
-				return true
+	var tenMB float64 = 10 << 20
+	fmt.Printf("tenMB = %v\n", tenMB)
+	isSmallerThan10MB := func(repo *interface{}) bool {
+		repoVal := *repo
+		switch repoVal.(type) {
+		case map[string]interface{}:
+			if repoSize, ok := (repoVal).(map[string]interface{})["size"]; ok {
+				switch repoSize.(type) {
+				case string:
+					if f, err := strconv.ParseFloat(repoSize.(string), 64); err == nil && f < tenMB {
+						return true
+					}
+				}
 			}
 		}
 		return false
 	}
-	//printPretty(&res)	
+	smallRepos := filterByPredicate(&aggs, isSmallerThan10MB)
+	var smallReposIntf interface{} = smallRepos
+	smallRepoNames := grepByKey(&smallReposIntf, "full_name")
+	sort.Strings(smallRepoNames)
+	smallRepoNamesM, _ := json.MarshalIndent(smallRepoNames, "", " ")
+	fmt.Println("repos:", string(smallRepoNamesM))
+
+	//printPretty(&res)
 }
